@@ -1,19 +1,14 @@
 # Build stage
-FROM eclipse-temurin:21-jdk AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
+# Copy the Maven project
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-
-RUN chmod +x mvnw
-
-RUN ./mvnw dependency:go-offline
-
 COPY src ./src
 
-RUN ./mvnw clean package -DskipTests
+# Build the Spring Boot application
+RUN mvn clean package -DskipTests
 
 
 # Run stage
