@@ -16,9 +16,12 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:5173")
-public class AuthController {
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "https://learn2play-final-1.onrender.com"
+})
 
+public class AuthController {
     private final AppUserRepository appUserRepository;
     @Autowired
     private EmailService emailService;
@@ -105,10 +108,9 @@ public class AuthController {
         );
 
         appUserRepository.save(user);
-
-        String resetLink =
-                "http://localhost:4200/reset-password?token="
-                        + token;
+String resetLink =
+        "https://learn2play-final-1.onrender.com/reset-password?token="
+                + token;
 
         emailService.sendPasswordResetEmail(
                 user.getEmail(),
