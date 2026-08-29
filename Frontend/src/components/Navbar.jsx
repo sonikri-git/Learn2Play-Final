@@ -1,0 +1,16 @@
+import React,{useState} from 'react';
+import {Link,NavLink,useNavigate} from 'react-router-dom';
+import {currentUser,logout} from '../api';
+import '../styles/navbar.scss';
+import logo from '../assets/logo.png';
+const links=[['/dashboard','Dashboard','grid'],['/upload','Upload','upload'],['/history','History','clock'],['/leaderboard','Leaderboard','trophy'],['/statistics','Statistics','chart'],['/profile','Profile','user']];
+const ICONS={
+  grid:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>,
+  upload:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>,
+  clock:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
+  trophy:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3a3 3 0 0 1-3 5M7 5H4a3 3 0 0 0 3 5"/></svg>,
+  chart:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>,
+  user:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 6-6 8-6s6.5 2 8 6"/></svg>,
+};
+const icon=(n)=><span className="nav-icon">{ICONS[n]}</span>;
+export default function Navbar(){const [open,setOpen]=useState(false);const nav=useNavigate();const u=currentUser();const name=u.name||u.email||'Learner';const parts=name.trim().split(/\s+/);const initials=(parts.length>1?parts[0][0]+parts[1][0]:name.slice(0,2)).toUpperCase();return <header className="navbar"><div className="navbar-inner"><Link className="brand" to="/dashboard"><span className="brand-mark"><img src={logo} alt="Learn2Play logo"/></span><span className="brand-name">Learn<span>2</span>Play</span></Link><nav className={'nav-links '+(open?'open':'')}>{links.map(([p,l,i])=><NavLink key={p} to={p} onClick={()=>setOpen(false)} className={({isActive})=>'nav-link '+(isActive?'active':'')}>{icon(i)}<span>{l}</span></NavLink>)}</nav><div className="navbar-right"><button className="avatar-btn" onClick={()=>{logout();nav('/login')}} title="Log out"><span className="avatar">{initials}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button><button className={'burger '+(open?'open':'')} onClick={()=>setOpen(!open)} aria-label="Menu"><span></span><span></span><span></span></button></div></div></header>}

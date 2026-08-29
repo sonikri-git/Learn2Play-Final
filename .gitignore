@@ -1,0 +1,22 @@
+# Eclipse
+.metadata/
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# Angular
+Frontend/node_modules/
+Frontend/dist/
+
+# Spring Boot
+Backend/target/
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -1,0 +1,7 @@
+requests
+pdfplumber
+pandas
+tqdm
+python-docx
+python-pptx
+striprtf
