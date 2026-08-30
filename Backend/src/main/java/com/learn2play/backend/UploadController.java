@@ -28,7 +28,10 @@ import java.util.Locale;
 import java.util.UUID;
 
 @CrossOrigin(
-        origins = "http://localhost:5173",
+        origins = {
+                "http://localhost:5173",
+                "https://learn2play-final-1.onrender.com"
+        },
         allowedHeaders = "*",
         methods = {
                 RequestMethod.GET,
