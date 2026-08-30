@@ -1,5 +1,5 @@
 """
-run ollama pull qwen2.5:3b after downloading ollama first
+Uses the Gemini API. Set GEMINI_API_KEY before running.
 
 Usage:
   python quizgen.py notes.pdf
@@ -12,7 +12,6 @@ Usage:
 """
 from extractor import extract_text, chunk_text, remove_acknowledgement
 from generators import (
-    check_ollama,
     generate_mcq,
     generate_short_answer,
     generate_fill_blank,
@@ -79,9 +78,6 @@ def generate_questions(
     max_workers: int = 1,
     verify: bool = True
 ):
-    # check that ollama is running
-    check_ollama()
-
     if difficulty not in DIFFICULTY_LEVELS:
         difficulty = "intermediate"
 
@@ -161,8 +157,7 @@ def generate_questions(
     # Tracks how much of what the model *proposed* actually survived
     # AI-verification + format-validation — this is the "how relevant/
     # correct is the generated content" signal, distinct from a user's
-    # quiz-taking accuracy. Computed for free from calls already being
-    # made, no extra Ollama round-trips.
+    # quiz-taking accuracy. Computed from the existing generation calls.
     total_proposed = 0
     total_accepted = 0
 
@@ -290,7 +285,7 @@ def parse_args():
     # stays backward compatible with anything that doesn't pass it.
     parser.add_argument("--num-questions", type=int, default=None)
 
-    # how many chunks to send to Ollama at once. This only helps if Ollama
+    # how many chunks to send to Gemini at once. This only helps if Ollama
     # can actually run inference concurrently (a GPU, or enough spare CPU
     # cores) — on a CPU-only machine, one model is doing all the work
     # regardless of how many requests are in flight, so raising this just
@@ -299,7 +294,7 @@ def parse_args():
     # try 3-4 and compare.
     parser.add_argument("--max-workers", type=int, default=1)
 
-    # verification runs a second Ollama call per chunk to review question
+    # verification runs a second Gemini API call per chunk to review question
     # quality — real value, but it roughly doubles generation time. Skip
     # it for faster (rougher) output, especially useful on CPU-only setups.
     parser.add_argument("--skip-verification", action="store_true")

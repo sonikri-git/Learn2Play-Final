@@ -1,10 +1,13 @@
-OLLAMA_URL = "http://localhost:11434"
+import os
 
-# CPU-only machines (no NVIDIA/AMD/Apple GPU — Intel integrated graphics
-# does not get Ollama acceleration) will be materially faster on a
-# smaller model. Options, roughly fastest to highest quality:
-#   qwen2.5:0.5b  - fastest, noticeably rougher question quality
-#   qwen2.5:1.5b  - good middle ground for CPU-only setups (current default)
-#   qwen2.5:3b    - best quality, needs GPU to feel fast
-# Remember to `ollama pull <model>` before switching.
-OLLAMA_MODEL = "qwen2.5:3b"
+# Gemini API configuration.
+# Set GEMINI_API_KEY in Render Environment Variables.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+
+# You can override this in Render with the GEMINI_MODEL environment variable.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite").strip()
+
+GEMINI_API_URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_MODEL}:generateContent"
+)

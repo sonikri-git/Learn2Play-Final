@@ -4,73 +4,78 @@ import sys
 
 import requests
 
-from config import OLLAMA_URL, OLLAMA_MODEL
+from config import GEMINI_API_KEY, GEMINI_API_URL, GEMINI_MODEL
 
-# function to check that ollama is running
-def check_ollama():
-    try:
-        resp = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
-        resp.raise_for_status()
-    except requests.ConnectionError:
-        sys.exit(
-            "\n[ERROR] Ollama is not running.\n"
-            "Start it with: ollama serve"
+# Gemini API client. The deployed app does not need Ollama or a local model.
+def check_gemini():
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "GEMINI_API_KEY is not configured. Add it to Render Environment Variables."
         )
-    except requests.HTTPError as exc:
-        sys.exit(f"\n[ERROR] Ollama responded with an error: {exc}")
+    print(f"Using Gemini model: {GEMINI_MODEL}")
 
-    available = [m["name"] for m in resp.json().get("models", [])]
 
-    # Exact-tag match, not a family-name substring match — "qwen2.5" being
-    # a substring of an installed "qwen2.5:3b" used to be treated as proof
-    # that "qwen2.5:1.5b" was available, which isn't true and led to every
-    # generation call silently 404-ing instead of failing here with a
-    # clear message.
-    if OLLAMA_MODEL in available:
-        print(f"Ollama is running. Model '{OLLAMA_MODEL}' is available.")
-        return
-
-    family = OLLAMA_MODEL.split(":")[0]
-    related = [m for m in available if m.split(":")[0] == family]
-
-    hint = ""
-    if related:
-        hint = (
-            f"\nYou do have other '{family}' tags installed ({', '.join(related)}), "
-            f"but not the exact tag '{OLLAMA_MODEL}' this script is configured to use."
-        )
-
-    sys.exit(
-        f"\n[ERROR] Model '{OLLAMA_MODEL}' not found.{hint}\n"
-        f"Run: ollama pull {OLLAMA_MODEL}"
-    )
-
-# function used to call ai model for question generation
 def run_inference(messages, max_tokens=512):
+    check_gemini()
+
+    # Gemini expects the system instruction separately from user contents.
+    system_parts = []
+    contents = []
+
+    for message in messages:
+        role = message.get("role", "user")
+        content = message.get("content", "")
+
+        if role == "system":
+            system_parts.append({"text": content})
+        else:
+            gemini_role = "model" if role == "assistant" else "user"
+            contents.append({
+                "role": gemini_role,
+                "parts": [{"text": content}]
+            })
+
     payload = {
-        "model": OLLAMA_MODEL,
-        "messages": messages,
-        "stream": False,
-        "think": False,
-        # keep the model resident in memory between calls instead of the
-        # Ollama default (unload after 5 min idle) — a single quiz run
-        # makes many back-to-back calls, so avoiding reload overhead
-        # between them matters more than freeing that memory quickly.
-        "keep_alive": "10m",
-        "options": {
-            "num_predict": max_tokens,
+        "contents": contents,
+        "generationConfig": {
             "temperature": 0.25,
-            "top_p": 0.8,
-            "top_k": 20,
+            "topP": 0.8,
+            "maxOutputTokens": max_tokens,
+            "responseMimeType": "application/json"
         }
     }
+
+    if system_parts:
+        payload["systemInstruction"] = {"parts": system_parts}
+
     response = requests.post(
-        f"{OLLAMA_URL}/api/chat",
+        GEMINI_API_URL,
+        params={"key": GEMINI_API_KEY},
         json=payload,
         timeout=600,
     )
-    response.raise_for_status()
-    return response.json()["message"]["content"].strip()
+
+    if not response.ok:
+        raise RuntimeError(
+            f"Gemini API error {response.status_code}: {response.text[:1000]}"
+        )
+
+    data = response.json()
+
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError(f"Gemini returned no candidates: {json.dumps(data)[:1000]}")
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    text = "".join(part.get("text", "") for part in parts).strip()
+
+    if not text:
+        raise RuntimeError(
+            f"Gemini returned an empty response: {json.dumps(data)[:1000]}"
+        )
+
+    return text
+
 
 # converts ai output into proper json structure
 # If the model's response got cut off mid-generation (ran out of the
