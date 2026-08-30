@@ -31,6 +31,7 @@ COPY ai ./ai
 # Install Python dependencies
 RUN pip3 install --no-cache-dir --break-system-packages \
     requests \
+    google-genai \
     pdfplumber \
     pandas \
     tqdm \
