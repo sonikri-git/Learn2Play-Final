@@ -7,7 +7,10 @@ import com.learn2play.backend.repository.AppUserRepository;
 import com.learn2play.backend.repository.QuizAttemptRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,8 +29,13 @@ public class LeaderboardService {
 
     public List<LeaderboardResponse> getLeaderboard() {
 
+        // Get ALL users from the database
+        List<AppUser> users = appUserRepository.findAll();
+
+        // Get ALL quiz attempts
         List<QuizAttempt> attempts = quizAttemptRepository.findAll();
 
+        // Group quiz attempts by user email
         Map<String, List<QuizAttempt>> grouped =
                 attempts.stream()
                         .collect(Collectors.groupingBy(
@@ -37,10 +45,18 @@ public class LeaderboardService {
         List<LeaderboardResponse> leaderboard =
                 new ArrayList<>();
 
-        for (String email : grouped.keySet()) {
+        // Loop through EVERY registered user
+        for (AppUser user : users) {
 
+            String email = user.getEmail();
+
+            // Get this user's attempts.
+            // If they have no quizzes, use an empty list.
             List<QuizAttempt> userAttempts =
-                    grouped.get(email);
+                    grouped.getOrDefault(
+                            email,
+                            new ArrayList<>()
+                    );
 
             double average =
                     userAttempts.stream()
@@ -61,50 +77,30 @@ public class LeaderboardService {
             int quizzes =
                     userAttempts.size();
 
-            String name =
-                    appUserRepository
-                            .findByEmail(email)
-                            .map(AppUser::getName)
-                            .orElse(email);
-
             leaderboard.add(
-
                     new LeaderboardResponse(
-
                             0,
-
-                            name,
-
+                            user.getName(),
                             email,
-
                             Math.round(average * 100) / 100.0,
-
                             Math.round(highest * 100) / 100.0,
-
                             quizzes
-
                     )
-
             );
-
         }
 
+        // Sort users by average score, highest first
         leaderboard.sort(
-
                 Comparator.comparingDouble(
                         LeaderboardResponse::getAverageScore
                 ).reversed()
-
         );
 
+        // Assign ranks
         for (int i = 0; i < leaderboard.size(); i++) {
-
             leaderboard.get(i).setRank(i + 1);
-
         }
 
         return leaderboard;
-
     }
-
 }
